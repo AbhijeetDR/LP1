@@ -56,74 +56,11 @@ class Scheduling_Algo:
         
         avg_tat = tot_tat/self.nprocess
         avg_wt = tot_wt/self.nprocess
-        print(ct)
+        # print(ct)
         Scheduling_Algo.ga(self.process, tat, wt, avg_tat, avg_wt)
 
         # return avg_tat, avg_wt
 
-    # def sjf(self):
-    #     rq = self.process.copy()
-    #     rq.sort()
-    #     # continue from here #done!!!!!!!
-    #     ct = [0 for i in range(self.nprocess)]
-    #     time_req = 0
-    #     for i in range(self.nprocess):
-    #         if(i == 0):
-    #             time_req += rq[i][0]+ rq[i][1]
-    #         else:
-    #             time_req += rq[i][1]
-        
-    #     lst=[]
-    #     t = 0
-    #     bt_left = [self.process[i][1] for i in range(self.nprocess)]
-    #     vis = [0 for i in range(self.nprocess)]
-    #     j = 0
-    #     # prev = []
-    #     # print(time_req)
-    #     # print(rq)
-        
-    #     for i in range(time_req):
-    #         # print("i", i, "lst", lst)
-            
-    #         for i1 in range(j, self.nprocess):
-    #             if(rq[i1][0] <= i):
-    #                 lst.append(rq[i1])
-    #                 j += 1
-    #             else:
-    #                 break    
-    #         # print("lst", lst)
-    #         minb, minid = 1000000,  1000000
-    #         present_at = -1
-    #         for k in range(len(lst)):
-    #             curid = lst[k][3]
-    #             if(bt_left[curid] < minb):
-    #                 minb = bt_left[curid]
-    #                 minid = curid
-    #                 present_at = k
-    #         # print("minid: ", minid)
-    #         if(minid != 1000000):
-    #             bt_left[minid] -= 1
-    #             if(bt_left[minid] == 0):
-    #                 # print("minid:", minid, "i:",i)
-    #                 ct[minid] = i
-    #                 del lst[present_at]
-            
-    #     # print(ct)
-    #     tot_tat = 0
-    #     tot_wt = 0
-    #     tat = [0] * self.nprocess
-    #     wt = [0] * self.nprocess
-
-    #     for i in range(self.nprocess):
-    #         tat[i] = ct[i] - self.process[i][0]
-    #         wt[i] = ct[i] - self.process[i][0] - self.process[i][1]
-    #         tot_tat += tat[i]
-    #         tot_wt += wt[i]
-
-    #     avg_tat = tot_tat/self.nprocess
-    #     avg_wt = tot_wt/self.nprocess
-
-    #     Scheduling_Algo.ga(self.process, tat,wt,avg_tat,avg_wt)
 
     def sjf(self):
         tmp = self.process.copy()
@@ -139,6 +76,9 @@ class Scheduling_Algo:
         for i in range(self.nprocess):
             btleft[i] = self.process[1]
 
+        tot_tat = 0
+        tot_wt = 0
+
 
         i =0
         pendinglst = []
@@ -152,6 +92,11 @@ class Scheduling_Algo:
                 if(btleft == 0):
                     ct[id] = t
                     complete+=1
+                    tat[id] = ct[id] - self.process[id][0]
+                    wt[id] = tat[id] - self.process[id][1]
+                    tot_tat = tat[id]
+                    tot_wt = wt[id]
+                    del pendinglst[0]
             
             else:
                 leastbt, leastid = 99999999,99999999
@@ -160,16 +105,32 @@ class Scheduling_Algo:
                     if(leastbt > btleft[id]):
                         leastbt = btleft[id]
                         leastid = id
+                        
                 
                 btleft[leastid]-=1
                 if(btleft[leastid] == 0):
                     ct[id] = t
                     complete+=1
+                    tat[id] = ct[id] - self.process[id][0]
+                    wt[id] = tat[id] - self.process[id][1]
+                    tot_tat +=tat[id]
+                    tot_wt += wt[id]
+                    
+                    for k in range(len(pendinglst)):
+                        if(pendinglst[k][3] == leastid):
+                            del pendinglst[k]
+                            break
             
             while(tmp[i][0] < t):
                 pendinglst.append(tmp[i])
                 i+=1
-            
+
+        avg_tat = tot_tat/self.nprocess
+        avg_wt = tot_wt/self.nprocess
+        print(ct)
+        Scheduling_Algo.ga(self.process, tat, wt, avg_tat, avg_wt)        
+        
+
         
             
 
