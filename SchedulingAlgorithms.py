@@ -1,5 +1,3 @@
-from calendar import leapdays
-
 
 class Scheduling_Algo:
     # process = []
@@ -27,7 +25,7 @@ class Scheduling_Algo:
         for i in range(self.nprocess):
             print(self.process[i][1], self.process[i][2])
 
-    def fcfs(self):
+    def fcfs(self, ca = 0):
         tmp = self.process.copy()
         tmp.sort()
         ct = [0] * self.nprocess
@@ -57,14 +55,14 @@ class Scheduling_Algo:
         avg_tat = tot_tat / self.nprocess
         avg_wt = tot_wt / self.nprocess
         # print(ct)
+        if(ca == 1):
+            return avg_tat, avg_wt
         Scheduling_Algo.ga(self.process, tat, wt, avg_tat, avg_wt)
 
-        # return avg_tat, avg_wt
-
-    def sjf(self):
+    def sjf(self,ca = 0):
         tmp = self.process.copy()
         tmp.sort()
-        print(tmp)
+        # print(tmp)
         complete = 0
         ct = [0] * self.nprocess
         tat = [0] * self.nprocess
@@ -95,8 +93,8 @@ class Scheduling_Algo:
                     complete += 1
                     tat[id] = ct[id] - self.process[id][0]
                     wt[id] = tat[id] - self.process[id][1]
-                    tot_tat = tat[id]
-                    tot_wt = wt[id]
+                    tot_tat += tat[id]
+                    tot_wt += wt[id]
                     del pendinglst[0]
 
             else:
@@ -129,46 +127,70 @@ class Scheduling_Algo:
         avg_tat = tot_tat / self.nprocess
         avg_wt = tot_wt / self.nprocess
         # print(ct)
+        if ca == 1:
+            return avg_tat, avg_wt
         Scheduling_Algo.ga(self.process, tat, wt, avg_tat, avg_wt)
 
-    def rr(self):
+    def rr(self, ca = 0):
         q = self.process.copy()
         q.sort()
         # print(q)
-        ct = [0 for i in range(self.nprocess)]
+        # print(self.process)
+        ct = [0] * self.nprocess
         tat = [0] * self.nprocess
         wt = [0] * self.nprocess
+        btleft = []
+        for i in range(self.nprocess):
+            btleft.append(self.process[i][1])
 
         t = 0
-        while len(q) != 0:
-            front = q.pop(0)
-            if (front[1] > self.time_slice):
-                front[1] -= self.time_slice
-                t += self.time_slice
-                q.append(front)
-            elif front[1] == self.time_slice:
-                t += self.time_slice
-                ct[front[3]] = t
-            else:
-                t += front[1]
-                front[1] = 0
-                ct[front[3]] = t
-
         tot_tat = 0
         tot_wt = 0
+        i = 0
+        complete = 0
+        while complete != self.nprocess:
+            front = q[i]
+            id = front[3]
+            if(btleft[id] == 0):
+                i = (i+1)%self.nprocess
 
-        for i in range(self.nprocess):
-            tat[i] = ct[i] - self.process[i][0]
-            wt[i] = ct[i] - self.process[i][0] - self.process[i][1]
-            tot_tat += tat[i]
-            tot_wt += wt[i]
+            if (btleft[id] > self.time_slice):
+                btleft[id] -= self.time_slice
+                t += self.time_slice
+                i = (i+1)%self.nprocess
+
+            elif btleft[id] == self.time_slice:
+                t += self.time_slice
+                btleft[id] -= self.time_slice
+                ct[id] = t
+                tat[id] = ct[id] - self.process[id][0]
+                tot_tat += tat[id]
+                wt[id] = tat[id] - self.process[id][1]
+                tot_wt += wt[id]
+                complete += 1
+                i = (i+1)%self.nprocess
+
+            else:
+                t += btleft[id]
+                # front[1] = 0
+                ct[id] = t
+                tat[id] = ct[id] - self.process[id][0]
+                tot_tat += tat[id]
+                wt[id] = tat[id] - self.process[id][1]
+                tot_wt += wt[id]
+                complete +=1
+                i = (i+1)%self.nprocess
+
+        # print(self.process)
 
         avg_tat = tot_tat / self.nprocess
         avg_wt = tot_wt / self.nprocess
+        if(ca == 1):
+            return avg_tat, avg_wt
         Scheduling_Algo.ga(self.process, tat, wt, avg_tat, avg_wt)
-        # return avg_tat, avg_wt
 
-    def priority(self):
+
+    def priority(self, ca = 0):
         accprior = []
         for i in self.process:
             accprior.append([i[0], i[2], i[3], i[1]])  # at, prior, id, bt
@@ -179,21 +201,78 @@ class Scheduling_Algo:
         wt = [0] * self.nprocess
 
         sum, tot_tat, tot_wt = 0, 0, 0
+        complete = 0
+        i = 0
+        t = 0
+        pendinglst = []
 
-        for i in accprior:
-            id = i[2]
-            sum = ct[id] = sum + i[3]
-            tat[id] = ct[id] - i[0]
-            wt[id] = tat[id] - i[3]
+        while(complete != self.nprocess):
+            if(len(pendinglst) == 0):
+                if(i < self.nprocess):
+                    t += accprior[i][0] + accprior[0][3]
+                    id =accprior[i][2]
+                    ct[id] = t
+                    tat[id] = ct[id] - accprior[i][0]
+                    wt[id] = tat[id] - accprior[i][3]
+                    tot_tat += tat[id]
+                    tot_wt += wt[id]
+                    i+=1
+                    complete+=1
 
-            tot_wt += wt[id]
-            tot_tat += tat[id]
+            elif(len(pendinglst) == 1):
+                if(t >= pendinglst[0][0]):
+                    t += pendinglst[0][3]
+                else:
+                    t += pendinglst[0][0] + pendinglst[0][3]
+
+                id = pendinglst[0][2]
+                ct[id] = t
+                tat[id] = ct[id] -  self.process[id][0]
+                wt[id] = tat[id] - self.process[id][1]
+                tot_tat +=tat[id]
+                tot_wt += wt[id]
+
+                del pendinglst[0]
+
+                complete +=1
+
+
+            else:
+                leastprior, leastid = 99999999,999999999
+                for j in pendinglst:
+                    id = j[2]
+                    prior = j[1]
+                    if(leastprior > prior):
+                        leastprior = prior
+                        leastid = id
+
+                complete += 1
+
+                for k in range(len(pendinglst)):
+                    id = pendinglst[k][2]
+                    if(id == leastid):
+                        t += pendinglst[k][3]
+                        ct[id] = t
+                        tat[id] = ct[id] - self.process[id][0]
+                        wt[id] = ct[id] - self.process[id][1]
+                        tot_tat += tat[id]
+                        tot_wt += wt[id]
+                        del pendinglst[k]
+                        break
+
+            while(i < self.nprocess and accprior[i][0] <= t):
+                pendinglst.append(accprior[i])
+                i+=1
+
+
 
         avg_tat = tot_tat / self.nprocess
         avg_wt = tot_wt / self.nprocess
-
-        # return avg_tat, avg_wt
+        # print(ct)
+        if ca == 1:
+            return avg_tat, avg_wt
         Scheduling_Algo.ga(self.process, tat, wt, avg_tat, avg_wt)
+
 
     @staticmethod
     def ga(process, tat, wt, avg_tat, avg_wt):
@@ -219,24 +298,63 @@ class Scheduling_Algo:
         print("Average TAT =", avg_tat)
         print("Average WT =", avg_wt)
 
+    def completeAnalysis(self):
+        print("\nAlgos\tAvg TAT\tAvg WT")
+        lst = []
+
+        t1,w1 = self.fcfs(ca = 1)
+        t2, w2 = self.sjf(ca=1)
+        t3, w3 = self.rr(ca=1)
+        t4, w4 = self.priority(ca=1)
+        lst.append(["FCFS", t1, w1])
+        lst.append(["SJF.", t2, w2])
+        lst.append(["R.R.", t3, w3])
+        lst.append(["PRIO", t4, w4])
+
+        leastTAT = min([t1,t2,t3,t4])
+        leastWT = min([w1,w2,w3,w4])
+
+        leastTATAlgo = ""
+        leastWTAlgo = ""
+
+        for i in range(4):
+            for j in range(3):
+                if(j == 1):
+                    print(lst[i][j], end="\t\t")
+                    if(leastTAT == lst[i][j]):
+                        leastTATAlgo = lst[i][0]
+                else:
+                    print(lst[i][j], end="\t")
+
+                if(j == 2):
+                    if(leastWT == lst[i][j]):
+                        leastWTAlgo = lst[i][0]
+            print("")
+
+
+        print("According to AvgTAT, " + leastTATAlgo + " is best for given process with having Avg TAT =", leastTAT)
+        print("According to AvgWT, " + leastWTAlgo + " is best for given process with having Avg WT =", leastWT)
+
+
+
+
 
 algo = Scheduling_Algo()
 algo.input()
-# algo.fcfs()
+algo.fcfs()
 algo.sjf()
-# algo.rr()
-# algo.priority()
-# algo.priority()
+algo.rr()
+algo.priority()
+algo.completeAnalysis()
 
 
-# process no-> 1 2 3 4 5
-# arrival time-> 0 1 3 2 4
-# burst time-> 3 6 1 2 4
-# priority-> 3 4 9 7 8
 
-# Enter arrival time and burst time and priority for the process:a b p: 0 5 1
-# Enter arrival time and burst time and priority for the process:a b p: 1 3 2
-# Enter arrival time and burst time and priority for the process:a b p: 2 1 3
-# Enter arrival time and burst time and priority for the process:a b p: 3 2 4
-# Enter arrival time and burst time and priority for the process:a b p: 4 3 5
-# Enter times slice for round robin algo: 2
+'''
+5
+0 3 3
+1 6 4
+3 1 9
+2 2 7
+4 4 8
+2
+'''
